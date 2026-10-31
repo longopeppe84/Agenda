@@ -1,0 +1,91 @@
+﻿@page "/contacts/create"
+@using Agenda2.Shared.DTOs
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h3>Nuovo Contatto</h3>
+
+<EditForm Model="contact" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Nome</label>
+            <InputText class="form-control" @bind-Value="contact.Nome" />
+            <ValidationMessage For="() => contact.Nome" class="text-danger" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Cognome</label>
+            <InputText class="form-control" @bind-Value="contact.Cognome" />
+            <ValidationMessage For="() => contact.Cognome" class="text-danger" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Email</label>
+            <InputText class="form-control" @bind-Value="contact.Email" />
+            <ValidationMessage For="() => contact.Email" class="text-danger" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Telefono</label>
+            <InputText class="form-control" @bind-Value="contact.Telefono" />
+            <ValidationMessage For="() => contact.Telefono" class="text-danger" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Data di Nascita</label>
+        <InputDate class="form-control" @bind-Value="contact.Dob" />
+    </div>
+
+    <hr />
+    <h5>Indirizzi</h5>
+
+    @foreach (var address in contact.Addresses)
+    {
+        <div class="row mb-2 align-items-end">
+            <div class="col-md-4">
+                <label>Via</label>
+                <InputText class="form-control" @bind-Value="address.Street" />
+            </div>
+            <div class="col-md-4">
+                <label>Città</label>
+                <InputText class="form-control" @bind-Value="address.City" />
+            </div>
+            <div class="col-md-2">
+                <label>CAP</label>
+                <InputText class="form-control" @bind-Value="address.ZipCode" />
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger w-100" @onclick="() => RemoveAddress(address)">Rimuovi</button>
+            </div>
+        </div>
+    }
+
+    <button type="button" class="btn btn-outline-primary mb-4" @onclick="AddAddress">+ Aggiungi Indirizzo</button>
+
+    <hr />
+    <button type="submit" class="btn btn-success">Salva</button>
+    <a href="contacts" class="btn btn-secondary">Annulla</a>
+</EditForm>
+
+@code {
+    private ContactDto contact = new ContactDto();
+
+    private void AddAddress()
+    {
+        contact.Addresses.Add(new AddressDto());
+    }
+
+    private void RemoveAddress(AddressDto address)
+    {
+        contact.Addresses.Remove(address);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await Http.PostAsJsonAsync("api/contact", contact);
+        Navigation.NavigateTo("contacts");
+    }
+}

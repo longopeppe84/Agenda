@@ -1,0 +1,88 @@
+﻿@page "/contacts"
+@using Agenda2.Shared.DTOs
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<h3>Lista Contatti</h3>
+
+<div class="mb-3">
+    <a href="contacts/create" class="btn btn-primary">Nuovo Contatto</a>
+</div>
+
+@if (contacts == null)
+{
+    <p><em>Caricamento in corso...</em></p>
+}
+else if (!contacts.Any())
+{
+    <p>Nessun contatto trovato. Inseriscine uno nuovo!</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th>Email</th>
+                <th>Telefono</th>
+                <th>Indirizzi</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contact in contacts)
+            {
+                <tr>
+                    <td>@contact.Nome</td>
+                    <td>@contact.Cognome</td>
+                    <td>@contact.Email</td>
+                    <td>@contact.Telefono</td>
+                    <td>
+                        @if (contact.Addresses != null && contact.Addresses.Any())
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var addr in contact.Addresses)
+                                {
+                                    <li>📍 @addr.Street, @addr.City (@addr.ZipCode)</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Nessun indirizzo</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="contacts/edit/@contact.Id" class="btn btn-sm btn-warning">Modifica</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteContact(contact.Id)">Elimina</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<ContactDto>? contacts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadContacts();
+    }
+
+    private async Task LoadContacts()
+    {
+        contacts = await Http.GetFromJsonAsync<IEnumerable<ContactDto>>("api/contact");
+    }
+
+    private async Task DeleteContact(Guid id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Sei sicuro di voler eliminare questo contatto e tutti i suoi indirizzi?");
+        if (confirmed)
+        {
+            await Http.DeleteAsync($"api/contact/{id}");
+            await LoadContacts();
+        }
+    }
+}
