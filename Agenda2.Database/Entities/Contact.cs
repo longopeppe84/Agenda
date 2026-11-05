@@ -25,15 +25,19 @@ public class Contact
     public string Telefono { get; set; } = string.Empty;
 
     public DateTime Dob { get; set; }
-    
+
     public bool IsDeleted { get; set; } = false;
 
     public string FotoProfilo { get; set; } = string.Empty;
 
-    public DateTime Created { get; set; } = DateTime.Now;
+    public ICollection<Relationship> Relationships { get; set; } = new List<Relationship>();
 
+    // Relazioni in entrata (es. Mario è il padre di Luca)
+    public ICollection<Relationship> ReverseRelationships { get; set; } = new List<Relationship>();
+
+    public DateTime Created { get; set; } = DateTime.Now;
     public DateTime Update { get; set; } = DateTime.Now;
 
-    // --- NAVIGATION PROPERTY (In inglese perché è nuova) ---
-    public ICollection<Address> Addresses { get; set; } = new List<Address>();
+    // Navigation Property verso la tabella ponte
+    public ICollection<ContactAddress> ContactAddresses { get; set; } = new List<ContactAddress>();
 }

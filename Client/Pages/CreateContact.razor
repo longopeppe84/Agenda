@@ -5,87 +5,143 @@
 
 <h3>Nuovo Contatto</h3>
 
-<EditForm Model="contact" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = null"></button>
+    </div>
+}
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label>Nome</label>
-            <InputText class="form-control" @bind-Value="contact.Nome" />
-            <ValidationMessage For="() => contact.Nome" class="text-danger" />
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light">Dati Anagrafici</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3"><label>Nome</label><input class="form-control" @bind="contact.Nome" /></div>
+            <div class="col-md-6 mb-3"><label>Cognome</label><input class="form-control" @bind="contact.Cognome" /></div>
         </div>
-        <div class="col-md-6 mb-3">
-            <label>Cognome</label>
-            <InputText class="form-control" @bind-Value="contact.Cognome" />
-            <ValidationMessage For="() => contact.Cognome" class="text-danger" />
+        <div class="row">
+            <div class="col-md-6 mb-3"><label>Email</label><input class="form-control" @bind="contact.Email" /></div>
+            <div class="col-md-6 mb-3"><label>Telefono</label><input class="form-control" @bind="contact.Telefono" /></div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Data di Nascita</label>
+                <input type="date" class="form-control" @bind="contact.Dob" />
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label>Email</label>
-            <InputText class="form-control" @bind-Value="contact.Email" />
-            <ValidationMessage For="() => contact.Email" class="text-danger" />
-        </div>
-        <div class="col-md-6 mb-3">
-            <label>Telefono</label>
-            <InputText class="form-control" @bind-Value="contact.Telefono" />
-            <ValidationMessage For="() => contact.Telefono" class="text-danger" />
-        </div>
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <span>Indirizzi</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddAddress">+ Aggiungi</button>
     </div>
-
-    <div class="mb-3">
-        <label>Data di Nascita</label>
-        <InputDate class="form-control" @bind-Value="contact.Dob" />
+    <div class="card-body">
+        @if (!contact.Addresses.Any())
+        {
+            <p class="text-muted fst-italic mb-0">Nessun indirizzo inserito.</p>
+        }
+        @foreach (var address in contact.Addresses)
+        {
+            <div class="row mb-2 align-items-end border-bottom pb-2">
+                <div class="col-md-4"><label class="form-label small mb-0">Via</label><input class="form-control form-control-sm" @bind="address.Street" /></div>
+                <div class="col-md-4"><label class="form-label small mb-0">Città</label><input class="form-control form-control-sm" @bind="address.City" /></div>
+                <div class="col-md-2"><label class="form-label small mb-0">CAP</label><input class="form-control form-control-sm" @bind="address.ZipCode" /></div>
+                <div class="col-md-2 text-end"><button type="button" class="btn btn-outline-danger btn-sm w-100" @onclick="() => RemoveAddress(address)">Rimuovi</button></div>
+            </div>
+        }
     </div>
+</div>
 
-    <hr />
-    <h5>Indirizzi</h5>
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <span>Relazioni Parentali</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddRelationship">+ Aggiungi</button>
+    </div>
+    <div class="card-body">
+        @if (!contact.Relationships.Any())
+        {
+            <p class="text-muted fst-italic mb-0">Nessuna relazione inserita.</p>
+        }
+        @foreach (var relationship in contact.Relationships)
+        {
+            <div class="row mb-2 align-items-end border-bottom pb-2">
+                <div class="col-md-4"><label class="form-label small mb-0">Tipo</label><input class="form-control form-control-sm" @bind="relationship.RelationshipType" placeholder="Es. Padre" /></div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-0">Parente</label>
+                    <select class="form-select form-select-sm" @bind="relationship.RelativeIdString">
+                        <option value="">-- Seleziona --</option>
+                        @foreach (var c in existingContacts)
+                        {
+                            <option value="@c.Id.ToString()">@c.Nome @c.Cognome</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 text-end"><button type="button" class="btn btn-outline-danger btn-sm w-100" @onclick="() => RemoveRelationship(relationship)">Rimuovi</button></div>
+            </div>
+        }
+    </div>
+</div>
 
-    @foreach (var address in contact.Addresses)
-    {
-        <div class="row mb-2 align-items-end">
-            <div class="col-md-4">
-                <label>Via</label>
-                <InputText class="form-control" @bind-Value="address.Street" />
-            </div>
-            <div class="col-md-4">
-                <label>Città</label>
-                <InputText class="form-control" @bind-Value="address.City" />
-            </div>
-            <div class="col-md-2">
-                <label>CAP</label>
-                <InputText class="form-control" @bind-Value="address.ZipCode" />
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-danger w-100" @onclick="() => RemoveAddress(address)">Rimuovi</button>
-            </div>
-        </div>
-    }
-
-    <button type="button" class="btn btn-outline-primary mb-4" @onclick="AddAddress">+ Aggiungi Indirizzo</button>
-
-    <hr />
-    <button type="submit" class="btn btn-success">Salva</button>
-    <a href="contacts" class="btn btn-secondary">Annulla</a>
-</EditForm>
+<div class="mb-5">
+    <button type="button" class="btn btn-success btn-lg" @onclick="Save" disabled="@isSaving">
+        @if (isSaving)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        Salva
+    </button>
+    <a href="contacts" class="btn btn-secondary btn-lg">Annulla</a>
+</div>
 
 @code {
     private ContactDto contact = new ContactDto();
+    private List<ContactDto> existingContacts = new();
+    private string? statusMessage;
+    private string alertClass = "alert-success";
+    private bool isSaving = false;
 
-    private void AddAddress()
+    protected override async Task OnInitializedAsync()
     {
-        contact.Addresses.Add(new AddressDto());
+        var list = await Http.GetFromJsonAsync<IEnumerable<ContactDto>>("api/contact");
+        if (list != null) existingContacts = list.ToList();
     }
 
-    private void RemoveAddress(AddressDto address)
-    {
-        contact.Addresses.Remove(address);
-    }
+    private void AddAddress() { contact.Addresses.Add(new AddressDto()); StateHasChanged(); }
+    private void RemoveAddress(AddressDto address) { contact.Addresses.Remove(address); StateHasChanged(); }
 
-    private async Task HandleValidSubmit()
+    private void AddRelationship() { contact.Relationships.Add(new RelationshipDto { Id = Guid.NewGuid() }); StateHasChanged(); }
+    private void RemoveRelationship(RelationshipDto rel) { contact.Relationships.Remove(rel); StateHasChanged(); }
+
+    private async Task Save()
     {
-        await Http.PostAsJsonAsync("api/contact", contact);
-        Navigation.NavigateTo("contacts");
+        try
+        {
+            isSaving = true;
+            statusMessage = null;
+
+            foreach (var rel in contact.Relationships)
+            {
+                if (Guid.TryParse(rel.RelativeIdString, out Guid parsedGuid)) rel.RelativeId = parsedGuid;
+            }
+
+            contact.Relationships = contact.Relationships
+                .Where(r => !string.IsNullOrWhiteSpace(r.RelationshipType) && r.RelativeId != Guid.Empty).ToList();
+
+            await Http.PostAsJsonAsync("api/contact", contact);
+
+            statusMessage = "Contatto salvato con successo!";
+            alertClass = "alert-success";
+            await Task.Delay(1000);
+            Navigation.NavigateTo("contacts", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Errore: " + ex.Message;
+            alertClass = "alert-danger";
+        }
+        finally { isSaving = false; }
     }
 }

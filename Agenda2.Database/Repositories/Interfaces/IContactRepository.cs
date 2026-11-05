@@ -9,6 +9,4 @@ public interface IContactRepository
     Task<Contact> CreateAsync(Contact contact);
     Task UpdateAsync(Contact contact);
     Task DeleteAsync(Guid id);
-
-    Task SaveAsync();
 }

@@ -17,17 +17,18 @@ public class ContactRepository : IContactRepository
     public async Task<IEnumerable<Contact>> GetAllAsync()
     {
         return await _context.Contacts
-            .Include(c => c.Addresses)
-            .Where(c=>c.IsDeleted==false)
-            
+            .Where(c => !c.IsDeleted)
+            .Include(c => c.ContactAddresses.Where(ca => !ca.IsDeleted)).ThenInclude(ca => ca.Address)
+            .Include(c => c.Relationships.Where(r => !r.IsDeleted)).ThenInclude(r => r.Relative)
             .ToListAsync();
     }
 
     public async Task<Contact?> GetByIdAsync(Guid id)
     {
         return await _context.Contacts
-            .Include(c => c.Addresses)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .Include(c => c.ContactAddresses.Where(ca => !ca.IsDeleted)).ThenInclude(ca => ca.Address)
+            .Include(c => c.Relationships.Where(r => !r.IsDeleted)).ThenInclude(r => r.Relative)
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
     }
 
     public async Task<Contact> CreateAsync(Contact contact)
@@ -39,8 +40,8 @@ public class ContactRepository : IContactRepository
 
     public async Task UpdateAsync(Contact contact)
     {
-        _context.Entry(contact).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        // Il salvataggio è gestito dal Service
+        await Task.CompletedTask;
     }
 
     public async Task DeleteAsync(Guid id)
@@ -48,13 +49,8 @@ public class ContactRepository : IContactRepository
         var contact = await _context.Contacts.FindAsync(id);
         if (contact != null)
         {
-            _context.Contacts.Remove(contact);
+            contact.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
-    }
-
-    public async Task SaveAsync()
-    {
-        await _context.SaveChangesAsync();
     }
 }

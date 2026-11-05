@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Agenda2.Database.Entities;
-// creata nuova entità 
+
 public class Address
 {
     [Key]
@@ -19,9 +18,9 @@ public class Address
     [MaxLength(10)]
     public string ZipCode { get; set; } = string.Empty;
 
-    // DEPENDENCY & NAVIGATION PROPERTY
-    public Guid ContactId { get; set; }
+    // Soft Delete: se true, l'indirizzo non è più valido
+    public bool IsDeleted { get; set; } = false;
 
-    [ForeignKey(nameof(ContactId))]
-    public Contact? Contact { get; set; }
+    // Navigation Property verso la tabella ponte
+    public ICollection<ContactAddress> ContactAddresses { get; set; } = new List<ContactAddress>();
 }

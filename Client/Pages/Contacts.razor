@@ -1,7 +1,6 @@
 ﻿@page "/contacts"
 @using Agenda2.Shared.DTOs
 @inject HttpClient Http
-@inject IJSRuntime JSRuntime
 
 <h3>Lista Contatti</h3>
 
@@ -11,11 +10,14 @@
 
 @if (contacts == null)
 {
-    <p><em>Caricamento in corso...</em></p>
+    <div class="d-flex align-items-center">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        <em>Caricamento in corso...</em>
+    </div>
 }
 else if (!contacts.Any())
 {
-    <p>Nessun contatto trovato. Inseriscine uno nuovo!</p>
+    <div class="alert alert-info">Nessun contatto trovato. Inseriscine uno nuovo!</div>
 }
 else
 {
@@ -27,6 +29,7 @@ else
                 <th>Email</th>
                 <th>Telefono</th>
                 <th>Indirizzi</th>
+                <th>Relazioni</th>
                 <th>Azioni</th>
             </tr>
         </thead>
@@ -39,7 +42,7 @@ else
                     <td>@contact.Email</td>
                     <td>@contact.Telefono</td>
                     <td>
-                        @if (contact.Addresses != null && contact.Addresses.Any())
+                        @if (contact.Addresses.Any())
                         {
                             <ul class="list-unstyled mb-0">
                                 @foreach (var addr in contact.Addresses)
@@ -50,12 +53,27 @@ else
                         }
                         else
                         {
-                            <span class="text-muted">Nessun indirizzo</span>
+                            <span class="text-muted small">Nessun indirizzo</span>
+                        }
+                    </td>
+                    <td>
+                        @if (contact.Relationships.Any())
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var rel in contact.Relationships)
+                                {
+                                    <li>👨‍👩‍👧 @rel.RelationshipType: @rel.RelativeName</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Nessuna relazione</span>
                         }
                     </td>
                     <td>
                         <a href="contacts/edit/@contact.Id" class="btn btn-sm btn-warning">Modifica</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteContact(contact.Id)">Elimina</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => OpenDeleteModal(contact)">Elimina</button>
                     </td>
                 </tr>
             }
@@ -63,26 +81,74 @@ else
     </table>
 }
 
+<!-- MODALE BOOTSTRAP PER L'ELIMINAZIONE -->
+@if (showDeleteModal)
+{
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Conferma Eliminazione</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body">
+                    Sei sicuro di voler eliminare il contatto <strong>@contactToDelete?.Nome @contactToDelete?.Cognome</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">Annulla</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete" disabled="@isDeleting">
+                        @if (isDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Elimina
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private IEnumerable<ContactDto>? contacts;
 
-    protected override async Task OnInitializedAsync()
+    // Variabili per la modale
+    private bool showDeleteModal = false;
+    private bool isDeleting = false;
+    private ContactDto? contactToDelete;
+
+    protected override async Task OnInitializedAsync() => await LoadContacts();
+
+    private async Task LoadContacts() => contacts = await Http.GetFromJsonAsync<IEnumerable<ContactDto>>("api/contact");
+
+    private void OpenDeleteModal(ContactDto contact)
     {
-        await LoadContacts();
+        contactToDelete = contact;
+        showDeleteModal = true;
     }
 
-    private async Task LoadContacts()
+    private void CloseDeleteModal()
     {
-        contacts = await Http.GetFromJsonAsync<IEnumerable<ContactDto>>("api/contact");
+        showDeleteModal = false;
+        contactToDelete = null;
     }
 
-    private async Task DeleteContact(Guid id)
+    private async Task ConfirmDelete()
     {
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Sei sicuro di voler eliminare questo contatto e tutti i suoi indirizzi?");
-        if (confirmed)
+        if (contactToDelete != null)
         {
-            await Http.DeleteAsync($"api/contact/{id}");
-            await LoadContacts();
+            try
+            {
+                isDeleting = true;
+                await Http.DeleteAsync($"api/contact/{contactToDelete.Id}");
+                CloseDeleteModal();
+                await LoadContacts();
+            }
+            finally
+            {
+                isDeleting = false;
+            }
         }
     }
 }

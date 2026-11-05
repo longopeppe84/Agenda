@@ -21,7 +21,7 @@ public class ContactController : ControllerBase
         return Ok(await _contactService.GetAllContactsAsync());
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id}")]
     public async Task<ActionResult<ContactDto>> GetById(Guid id)
     {
         var contact = await _contactService.GetContactByIdAsync(id);
@@ -36,15 +36,17 @@ public class ContactController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, ContactDto contactDto)
     {
-        if (id != contactDto.Id) return BadRequest();
+        // Forza l'ID nel DTO per evitare errori di tracking
+        contactDto.Id = id;
+
         await _contactService.UpdateContactAsync(id, contactDto);
         return NoContent();
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _contactService.DeleteContactAsync(id);

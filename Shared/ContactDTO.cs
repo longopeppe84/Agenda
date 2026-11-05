@@ -24,4 +24,7 @@ public class ContactDto
 
     // Lista degli indirizzi (in inglese perché nuova)
     public List<AddressDto> Addresses { get; set; } = new List<AddressDto>();
+
+    
+    public List<RelationshipDto> Relationships { get; set; } = new List<RelationshipDto>();
 }

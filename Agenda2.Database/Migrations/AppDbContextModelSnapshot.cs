@@ -30,8 +30,8 @@ namespace Agenda2.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<Guid>("ContactId")
-                        .HasColumnType("char(36)");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Street")
                         .IsRequired()
@@ -43,8 +43,6 @@ namespace Agenda2.Database.Migrations
                         .HasColumnType("varchar(10)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ContactId");
 
                     b.ToTable("Addresses");
                 });
@@ -93,20 +91,102 @@ namespace Agenda2.Database.Migrations
                     b.ToTable("Contacts");
                 });
 
-            modelBuilder.Entity("Agenda2.Database.Entities.Address", b =>
+            modelBuilder.Entity("Agenda2.Database.Entities.ContactAddress", b =>
                 {
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("AddressId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("ContactId", "AddressId");
+
+                    b.HasIndex("AddressId");
+
+                    b.ToTable("ContactAddresses");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.Relationship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("RelationshipType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RelativeId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("RelativeId");
+
+                    b.ToTable("Relationships");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.ContactAddress", b =>
+                {
+                    b.HasOne("Agenda2.Database.Entities.Address", "Address")
+                        .WithMany("ContactAddresses")
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Agenda2.Database.Entities.Contact", "Contact")
-                        .WithMany("Addresses")
+                        .WithMany("ContactAddresses")
                         .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Address");
+
                     b.Navigation("Contact");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.Relationship", b =>
+                {
+                    b.HasOne("Agenda2.Database.Entities.Contact", "Contact")
+                        .WithMany("Relationships")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Agenda2.Database.Entities.Contact", "Relative")
+                        .WithMany("ReverseRelationships")
+                        .HasForeignKey("RelativeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Relative");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.Address", b =>
+                {
+                    b.Navigation("ContactAddresses");
                 });
 
             modelBuilder.Entity("Agenda2.Database.Entities.Contact", b =>
                 {
-                    b.Navigation("Addresses");
+                    b.Navigation("ContactAddresses");
+
+                    b.Navigation("Relationships");
+
+                    b.Navigation("ReverseRelationships");
                 });
 #pragma warning restore 612, 618
         }
