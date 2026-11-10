@@ -11,7 +11,7 @@
 @if (contacts == null)
 {
     <div class="d-flex align-items-center">
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        <span class="spinner-border spinner-border-sm me-2 " role="status" aria-hidden="true"></span>
         <em>Caricamento in corso...</em>
     </div>
 }
@@ -79,6 +79,47 @@ else
             }
         </tbody>
     </table>
+
+    <hr />  
+
+    <div>    Nuova struttura</div>
+
+    <div class="row">
+        <div class="col-12 col-md-3">Nome Cognome</div>
+        <div class="col-12 col-md-3">Email</div>
+        <div class="col-12 col-md-4">Indirizzi</div>
+        <div class="col-12 col-md-2">Azioni</div>
+
+    </div>
+    @foreach (var contact in contacts)
+    {
+    <div class="row">
+        <div class="col-12 col-md-3">@contact.Nome @contact.Cognome</div>
+            <div class="col-12 col-md-3">@contact.Email</div>
+            <div class="col-12 col-md-4">
+                @if (contact.Addresses.Any())
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var addr in contact.Addresses)
+                        {
+                            <li>📍 @addr.Street, @addr.City (@addr.ZipCode)</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <span class="text-muted small">Nessun indirizzo</span>
+                }
+            </div>
+            <div class="col-12 col-md-2">
+                <a href="contacts/edit/@contact.Id" class="btn btn-sm btn-warning">Modifica</a>
+                <button class="btn btn-sm btn-danger" @onclick="() => OpenDeleteModal(contact)">Elimina</button>
+            </div>
+
+    </div>
+
+    }
+
 }
 
 <!-- MODALE BOOTSTRAP PER L'ELIMINAZIONE -->
@@ -108,47 +149,4 @@ else
             </div>
         </div>
     </div>
-}
-
-@code {
-    private IEnumerable<ContactDto>? contacts;
-
-    // Variabili per la modale
-    private bool showDeleteModal = false;
-    private bool isDeleting = false;
-    private ContactDto? contactToDelete;
-
-    protected override async Task OnInitializedAsync() => await LoadContacts();
-
-    private async Task LoadContacts() => contacts = await Http.GetFromJsonAsync<IEnumerable<ContactDto>>("api/contact");
-
-    private void OpenDeleteModal(ContactDto contact)
-    {
-        contactToDelete = contact;
-        showDeleteModal = true;
-    }
-
-    private void CloseDeleteModal()
-    {
-        showDeleteModal = false;
-        contactToDelete = null;
-    }
-
-    private async Task ConfirmDelete()
-    {
-        if (contactToDelete != null)
-        {
-            try
-            {
-                isDeleting = true;
-                await Http.DeleteAsync($"api/contact/{contactToDelete.Id}");
-                CloseDeleteModal();
-                await LoadContacts();
-            }
-            finally
-            {
-                isDeleting = false;
-            }
-        }
-    }
 }

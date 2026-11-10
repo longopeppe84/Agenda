@@ -39,5 +39,5 @@ public class Contact
     public DateTime Update { get; set; } = DateTime.Now;
 
     // Navigation Property verso la tabella ponte
-    public ICollection<ContactAddress> ContactAddresses { get; set; } = new List<ContactAddress>();
+    public virtual ICollection<ContactAddress> ContactAddresses { get; set; } = new List<ContactAddress>();
 }

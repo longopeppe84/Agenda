@@ -211,7 +211,7 @@ public class ContactService
                 City = ca.Address.City,
                 ZipCode = ca.Address.ZipCode
             }).ToList(),
-            Relationships = c.Relationships.Where(r => !r.IsDeleted).Select(r => new RelationshipDto
+            Relationships = c.Relationships.Where(r => !r.IsDeleted && !r.Relative.IsDeleted).Select(r => new RelationshipDto
             {
                 Id = r.Id,
                 RelationshipType = r.RelationshipType,

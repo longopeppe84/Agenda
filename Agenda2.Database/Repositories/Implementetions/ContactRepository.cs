@@ -16,11 +16,19 @@ public class ContactRepository : IContactRepository
 
     public async Task<IEnumerable<Contact>> GetAllAsync()
     {
+
+
         return await _context.Contacts
-            .Where(c => !c.IsDeleted)
-            .Include(c => c.ContactAddresses.Where(ca => !ca.IsDeleted)).ThenInclude(ca => ca.Address)
-            .Include(c => c.Relationships.Where(r => !r.IsDeleted)).ThenInclude(r => r.Relative)
-            .ToListAsync();
+            .Include(x => x.ContactAddresses.Where(x => !x.IsDeleted))
+            .ThenInclude(x => x.Address)
+            .Include(x => x.Relationships.Where(x => !x.IsDeleted))
+            .ThenInclude(x => x.Relative)
+
+            .Where(x=>!x.IsDeleted)
+            .ToListAsync();  
+
+
+
     }
 
     public async Task<Contact?> GetByIdAsync(Guid id)
