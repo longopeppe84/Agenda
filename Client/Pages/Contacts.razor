@@ -1,17 +1,18 @@
 ﻿@page "/contacts"
 @using Agenda2.Shared.DTOs
-@inject HttpClient Http
 
-<h3>Lista Contatti</h3>
+<h3 class="mb-4 fw-bold">📇 Lista Contatti</h3>
 
-<div class="mb-3">
-    <a href="contacts/create" class="btn btn-primary">Nuovo Contatto</a>
+<div class="mb-4">
+    <a href="contacts/create" class="btn btn-primary shadow-sm">
+        ➕ Nuovo Contatto
+    </a>
 </div>
 
 @if (contacts == null)
 {
-    <div class="d-flex align-items-center">
-        <span class="spinner-border spinner-border-sm me-2 " role="status" aria-hidden="true"></span>
+    <div class="d-flex align-items-center text-primary">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
         <em>Caricamento in corso...</em>
     </div>
 }
@@ -21,108 +22,76 @@ else if (!contacts.Any())
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Cognome</th>
-                <th>Email</th>
-                <th>Telefono</th>
-                <th>Indirizzi</th>
-                <th>Relazioni</th>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var contact in contacts)
-            {
-                <tr>
-                    <td>@contact.Nome</td>
-                    <td>@contact.Cognome</td>
-                    <td>@contact.Email</td>
-                    <td>@contact.Telefono</td>
-                    <td>
-                        @if (contact.Addresses.Any())
-                        {
-                            <ul class="list-unstyled mb-0">
-                                @foreach (var addr in contact.Addresses)
-                                {
-                                    <li>📍 @addr.Street, @addr.City (@addr.ZipCode)</li>
-                                }
-                            </ul>
-                        }
-                        else
-                        {
-                            <span class="text-muted small">Nessun indirizzo</span>
-                        }
-                    </td>
-                    <td>
-                        @if (contact.Relationships.Any())
-                        {
-                            <ul class="list-unstyled mb-0">
-                                @foreach (var rel in contact.Relationships)
-                                {
-                                    <li>👨‍👩‍👧 @rel.RelationshipType: @rel.RelativeName</li>
-                                }
-                            </ul>
-                        }
-                        else
-                        {
-                            <span class="text-muted small">Nessuna relazione</span>
-                        }
-                    </td>
-                    <td>
-                        <a href="contacts/edit/@contact.Id" class="btn btn-sm btn-warning">Modifica</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => OpenDeleteModal(contact)">Elimina</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+        @foreach (var contact in contacts)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0 fw-bold">@contact.Nome @contact.Cognome</h5>
+                    </div>
 
-    <hr />  
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="me-2">✉️</span>
+                                <small class="text-muted">@contact.Email</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">📞</span>
+                                <small class="text-muted">@contact.Telefono</small>
+                            </div>
+                        </div>
 
-    <div>    Nuova struttura</div>
+                        <div class="mb-3">
+                            <h6 class="text-secondary fw-bold mb-2">📍 Indirizzi</h6>
+                            @if (contact.Addresses.Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var addr in contact.Addresses)
+                                    {
+                                        <li class="small mb-1">@addr.Street, @addr.City (@addr.ZipCode)</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted small fst-italic">Nessun indirizzo</span>
+                            }
+                        </div>
 
-    <div class="row">
-        <div class="col-12 col-md-3">Nome Cognome</div>
-        <div class="col-12 col-md-3">Email</div>
-        <div class="col-12 col-md-4">Indirizzi</div>
-        <div class="col-12 col-md-2">Azioni</div>
+                        <div class="mb-3 flex-grow-1">
+                            <h6 class="text-secondary fw-bold mb-2">👨‍👩‍👧 Relazioni</h6>
+                            @if (contact.Relationships.Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var rel in contact.Relationships)
+                                    {
+                                        <li class="small mb-1">@rel.RelationshipType: @rel.RelativeName</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted small fst-italic">Nessuna relazione</span>
+                            }
+                        </div>
 
-    </div>
-    @foreach (var contact in contacts)
-    {
-    <div class="row">
-        <div class="col-12 col-md-3">@contact.Nome @contact.Cognome</div>
-            <div class="col-12 col-md-3">@contact.Email</div>
-            <div class="col-12 col-md-4">
-                @if (contact.Addresses.Any())
-                {
-                    <ul class="list-unstyled mb-0">
-                        @foreach (var addr in contact.Addresses)
-                        {
-                            <li>📍 @addr.Street, @addr.City (@addr.ZipCode)</li>
-                        }
-                    </ul>
-                }
-                else
-                {
-                    <span class="text-muted small">Nessun indirizzo</span>
-                }
+                        <div class="mt-auto d-flex gap-2">
+                            <a href="contacts/edit/@contact.Id" class="btn btn-warning btn-sm flex-fill">
+                                ✏️ Modifica
+                            </a>
+                            <button class="btn btn-danger btn-sm flex-fill" @onclick="() => OpenDeleteModal(contact)">
+                                🗑️ Elimina
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-12 col-md-2">
-                <a href="contacts/edit/@contact.Id" class="btn btn-sm btn-warning">Modifica</a>
-                <button class="btn btn-sm btn-danger" @onclick="() => OpenDeleteModal(contact)">Elimina</button>
-            </div>
-
+        }
     </div>
-
-    }
-
 }
 
-<!-- MODALE BOOTSTRAP PER L'ELIMINAZIONE -->
 @if (showDeleteModal)
 {
     <div class="modal-backdrop fade show" style="z-index: 1040;"></div>

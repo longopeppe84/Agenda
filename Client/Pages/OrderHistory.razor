@@ -1,0 +1,170 @@
+﻿@page "/order-history"
+@using Agenda2.Shared.DTOs
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<h3 class="mb-4 fw-bold">📋 Storico Ordini</h3>
+
+@if (orders == null)
+{
+    <div class="d-flex align-items-center text-primary">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        <em>Caricamento storico...</em>
+    </div>
+}
+else
+{
+    <!-- FILTRI E ORDINAMENTO -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <!-- Filtro per Contatto -->
+                <div class="col-12 col-md-5">
+                    <label class="form-label fw-bold">Filtra per Contatto</label>
+                    <select class="form-select" @bind="selectedContactName">
+                        <option value="">Tutti i contatti</option>
+                        @foreach (var contactName in uniqueContactNames)
+                        {
+                            <option value="@contactName">@contactName</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Ordinamento -->
+                <div class="col-12 col-md-5">
+                    <label class="form-label fw-bold">Ordinamento</label>
+                    <select class="form-select" @bind="orderByOption">
+                        <option value="recent">Più recenti prima</option>
+                        <option value="oldest">Più vecchi prima</option>
+                    </select>
+                </div>
+
+                <!-- Pulsante Reset -->
+                <div class="col-12 col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTA ORDINI FILTRATI -->
+    @if (!FilteredOrders.Any())
+    {
+        <div class="alert alert-warning">Nessun ordine trovato con i filtri selezionati.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var order in FilteredOrders)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <span>📅 @order.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="badge bg-success fs-6">€ @order.TotalAmount.ToString("F2")</span>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-primary">👤 @order.ContactName</h5>
+                            <hr />
+                            <h6 class="text-muted">Pizze ordinate:</h6>
+                            <ul class="list-group list-group-flush flex-grow-1">
+                                @foreach (var item in order.Items)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span>
+                                            @item.PizzaName
+                                            <span class="badge bg-secondary ms-2">x @item.Quantity</span>
+                                        </span>
+                                        <span class="text-muted small">€ @item.Price.ToString("F2")</span>
+                                    </li>
+                                }
+                            </ul>
+
+                            <!-- PULSANTE PER IL PDF -->
+                            <div class="mt-3 text-end">
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => DownloadPdf(order.OrderId)">
+                                    📄 Scarica Ricevuta PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private List<OrderHistoryDto>? orders;
+
+    // Variabili per i filtri
+    private string selectedContactName = string.Empty;
+    private string orderByOption = "recent";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            orders = await Http.GetFromJsonAsync<List<OrderHistoryDto>>("api/order/history");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore nel caricamento dello storico: {ex.Message}");
+        }
+    }
+
+    // Restituisce la lista di nomi unici dei contatti presenti negli ordini
+    private IEnumerable<string> uniqueContactNames
+    {
+        get
+        {
+            if (orders == null) return Enumerable.Empty<string>();
+            return orders.Select(o => o.ContactName).Distinct().OrderBy(n => n);
+        }
+    }
+
+    // Proprietà calcolata che applica i filtri e l'ordinamento
+    private IEnumerable<OrderHistoryDto> FilteredOrders
+    {
+        get
+        {
+            if (orders == null) return Enumerable.Empty<OrderHistoryDto>();
+
+            var filtered = orders.AsEnumerable();
+
+            // Filtro per contatto
+            if (!string.IsNullOrEmpty(selectedContactName))
+            {
+                filtered = filtered.Where(o => o.ContactName == selectedContactName);
+            }
+
+            // Ordinamento
+            if (orderByOption == "oldest")
+            {
+                filtered = filtered.OrderBy(o => o.OrderDate);
+            }
+            else
+            {
+                filtered = filtered.OrderByDescending(o => o.OrderDate);
+            }
+
+            return filtered;
+        }
+    }
+
+    // Metodo per resettare i filtri
+    private void ResetFilters()
+    {
+        selectedContactName = string.Empty;
+        orderByOption = "recent";
+    }
+
+    // Metodo per scaricare il PDF
+    private async Task DownloadPdf(Guid orderId)
+    {
+        var url = $"api/order/{orderId}/receipt";
+        await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+}

@@ -19,6 +19,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<ContactService>();
 
+// NUOVO: Registrazione del servizio per la generazione dei PDF
+builder.Services.AddScoped<PdfService>();
+
 // ==========================================
 // 3. CONFIGURAZIONE WEB API E BLAZOR
 // ==========================================

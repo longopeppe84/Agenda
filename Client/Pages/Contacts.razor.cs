@@ -1,13 +1,15 @@
 ﻿using Agenda2.Shared.DTOs;
+using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 
 namespace Agenda2.Client.Pages
 {
     public partial class Contacts
     {
-        private IEnumerable<ContactDto>? contacts;
+        [Inject]
+        public HttpClient Http { get; set; } = default!;
 
-        // Variabili per la modale
+        private IEnumerable<ContactDto>? contacts;
         private bool showDeleteModal = false;
         private bool isDeleting = false;
         private ContactDto? contactToDelete;
@@ -45,6 +47,5 @@ namespace Agenda2.Client.Pages
                 }
             }
         }
-
     }
 }

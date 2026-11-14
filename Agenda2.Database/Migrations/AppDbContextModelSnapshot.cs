@@ -109,6 +109,125 @@ namespace Agenda2.Database.Migrations
                     b.ToTable("ContactAddresses");
                 });
 
+            modelBuilder.Entity("Agenda2.Database.Entities.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("PizzaId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PizzaId");
+
+                    b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.Pizza", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Ingredients")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Pizzas");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            ImageUrl = "🍕",
+                            Ingredients = "Pomodoro, Mozzarella, Basilico",
+                            IsDeleted = false,
+                            Name = "Margherita",
+                            Price = 5.50m
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            ImageUrl = "🌶️",
+                            Ingredients = "Pomodoro, Mozzarella, Salame Piccante",
+                            IsDeleted = false,
+                            Name = "Diavola",
+                            Price = 7.00m
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            ImageUrl = "🍄",
+                            Ingredients = "Pomodoro, Mozzarella, Prosciutto, Funghi, Carciofi",
+                            IsDeleted = false,
+                            Name = "Capricciosa",
+                            Price = 8.50m
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                            ImageUrl = "🧀",
+                            Ingredients = "Mozzarella, Gorgonzola, Fontina, Parmigiano",
+                            IsDeleted = false,
+                            Name = "Quattro Formaggi",
+                            Price = 8.00m
+                        });
+                });
+
             modelBuilder.Entity("Agenda2.Database.Entities.Relationship", b =>
                 {
                     b.Property<Guid>("Id")
@@ -156,6 +275,36 @@ namespace Agenda2.Database.Migrations
                     b.Navigation("Contact");
                 });
 
+            modelBuilder.Entity("Agenda2.Database.Entities.Order", b =>
+                {
+                    b.HasOne("Agenda2.Database.Entities.Contact", "Contact")
+                        .WithMany("Orders")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.OrderItem", b =>
+                {
+                    b.HasOne("Agenda2.Database.Entities.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Agenda2.Database.Entities.Pizza", "Pizza")
+                        .WithMany()
+                        .HasForeignKey("PizzaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Pizza");
+                });
+
             modelBuilder.Entity("Agenda2.Database.Entities.Relationship", b =>
                 {
                     b.HasOne("Agenda2.Database.Entities.Contact", "Contact")
@@ -184,9 +333,16 @@ namespace Agenda2.Database.Migrations
                 {
                     b.Navigation("ContactAddresses");
 
+                    b.Navigation("Orders");
+
                     b.Navigation("Relationships");
 
                     b.Navigation("ReverseRelationships");
+                });
+
+            modelBuilder.Entity("Agenda2.Database.Entities.Order", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }

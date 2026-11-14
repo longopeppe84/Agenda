@@ -38,6 +38,9 @@ public class Contact
     public DateTime Created { get; set; } = DateTime.Now;
     public DateTime Update { get; set; } = DateTime.Now;
 
-    // Navigation Property verso la tabella ponte
+    // Navigation Property verso la tabella ponte degli indirizzi
     public virtual ICollection<ContactAddress> ContactAddresses { get; set; } = new List<ContactAddress>();
+
+    // NUOVO: Navigation Property per gli ordini (profilazione)
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

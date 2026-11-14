@@ -43,6 +43,7 @@ public class ContactService
             Update = DateTime.Now
         };
 
+        // 1. Indirizzi
         foreach (var addrDto in contactDto.Addresses)
         {
             var existingAddress = await _context.Addresses
@@ -57,6 +58,7 @@ public class ContactService
             contact.ContactAddresses.Add(new ContactAddress { AddressId = existingAddress.Id, IsDeleted = false });
         }
 
+        // 2. Relazioni
         foreach (var relDto in contactDto.Relationships)
         {
             if (relDto.RelativeId == Guid.Empty) continue;
@@ -74,15 +76,15 @@ public class ContactService
 
     public async Task UpdateContactAsync(Guid id, ContactDto contactDto)
     {
+        // 1. Carichiamo il contatto con TRACKING ATTIVO
         var contact = await _context.Contacts
             .Include(c => c.ContactAddresses)
-                .ThenInclude(ca => ca.Address)
             .Include(c => c.Relationships)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (contact == null) return;
 
-        // 1. Aggiorniamo i campi base
+        // 2. Aggiorniamo i campi base
         contact.Nome = contactDto.Nome;
         contact.Cognome = contactDto.Cognome;
         contact.Email = contactDto.Email;
@@ -90,27 +92,29 @@ public class ContactService
         contact.Dob = contactDto.Dob;
         contact.Update = DateTime.Now;
 
-        // ==========================================
-        // 2. GESTIONE INDIRIZZI (Solo se presenti nel DTO)
-        // ==========================================
+        // 3. Salviamo subito i campi base
+        await _context.SaveChangesAsync();
 
-        // A) Rimuoviamo i legami che non sono più nel DTO (Soft Delete)
-        foreach (var existingCa in contact.ContactAddresses.ToList())
+        // ==========================================
+        // 4. GESTIONE INDIRIZZI (Confronto)
+        // ==========================================
+        // Rimuoviamo dalla lista degli indirizzi esistenti quelli che NON sono più nel DTO
+        foreach (var ca in contact.ContactAddresses.ToList())
         {
-            // Se l'indirizzo non è presente nel DTO, lo marchiamo come cancellato
-            if (!contactDto.Addresses.Any(a => a.Id == existingCa.AddressId))
+            // Se l'indirizzo non è presente nel DTO (per ID), lo marchiamo come cancellato
+            if (!contactDto.Addresses.Any(a => a.Id == ca.AddressId))
             {
-                existingCa.IsDeleted = true;
+                ca.IsDeleted = true;
             }
         }
+        await _context.SaveChangesAsync();
 
-        // B) Aggiungiamo i nuovi indirizzi
+        // Aggiungiamo i nuovi indirizzi (quelli con ID vuoto o non ancora presenti)
         foreach (var addrDto in contactDto.Addresses)
         {
-            // Se ha un ID, è un indirizzo esistente che vogliamo mantenere. Saltiamolo.
+            // Se ha già un ID, significa che è un indirizzo esistente, lo saltiamo
             if (addrDto.Id != Guid.Empty) continue;
 
-            // Se non ha ID, è un nuovo indirizzo
             var existingAddress = await _context.Addresses
                 .FirstOrDefaultAsync(a => a.Street == addrDto.Street && a.City == addrDto.City && a.ZipCode == addrDto.ZipCode && !a.IsDeleted);
 
@@ -121,7 +125,7 @@ public class ContactService
                 await _context.SaveChangesAsync();
             }
 
-            // Controlliamo se il legame esiste già (magari riattiviamo uno cancellato)
+            // Controlliamo se il legame esiste già (anche se cancellato, lo riattiviamo)
             var existingLink = contact.ContactAddresses
                 .FirstOrDefault(ca => ca.AddressId == existingAddress.Id);
 
@@ -136,25 +140,23 @@ public class ContactService
         }
 
         // ==========================================
-        // 3. GESTIONE RELAZIONI (Solo se presenti nel DTO)
+        // 5. GESTIONE RELAZIONI (Confronto)
         // ==========================================
-
-        // A) Rimuoviamo le relazioni che non sono più nel DTO
-        foreach (var existingRel in contact.Relationships.ToList())
+        // Rimuoviamo le relazioni che non sono più nel DTO
+        foreach (var rel in contact.Relationships.ToList())
         {
-            // Se la relazione non è presente nel DTO (per RelativeId), la marchiamo come cancellata
-            if (!contactDto.Relationships.Any(r => r.RelativeId == existingRel.RelativeId && r.RelationshipType == existingRel.RelationshipType))
+            if (!contactDto.Relationships.Any(r => r.RelativeId == rel.RelativeId && r.RelationshipType == rel.RelationshipType))
             {
-                existingRel.IsDeleted = true;
+                rel.IsDeleted = true;
             }
         }
+        await _context.SaveChangesAsync();
 
-        // B) Aggiungiamo le nuove relazioni
+        // Aggiungiamo le nuove relazioni
         foreach (var relDto in contactDto.Relationships)
         {
             if (relDto.RelativeId == Guid.Empty) continue;
 
-            // Controlliamo se esiste già una relazione attiva identica
             var existingRel = contact.Relationships
                 .FirstOrDefault(r => r.RelativeId == relDto.RelativeId && r.RelationshipType == relDto.RelationshipType);
 
@@ -173,7 +175,7 @@ public class ContactService
             }
         }
 
-        // 4. Salvataggio finale
+        // 6. Salvataggio finale
         await _context.SaveChangesAsync();
     }
 
@@ -211,14 +213,16 @@ public class ContactService
                 City = ca.Address.City,
                 ZipCode = ca.Address.ZipCode
             }).ToList(),
-            Relationships = c.Relationships.Where(r => !r.IsDeleted && !r.Relative.IsDeleted).Select(r => new RelationshipDto
-            {
-                Id = r.Id,
-                RelationshipType = r.RelationshipType,
-                RelativeId = r.RelativeId,
-                RelativeIdString = r.RelativeId.ToString(),
-                RelativeName = r.Relative != null ? $"{r.Relative.Nome} {r.Relative.Cognome}" : "Sconosciuto"
-            }).ToList()
+            Relationships = c.Relationships
+                .Where(r => !r.IsDeleted && (r.Relative == null || !r.Relative.IsDeleted))
+                .Select(r => new RelationshipDto
+                {
+                    Id = r.Id,
+                    RelationshipType = r.RelationshipType,
+                    RelativeId = r.RelativeId,
+                    RelativeIdString = r.RelativeId.ToString(),
+                    RelativeName = r.Relative != null ? $"{r.Relative.Nome} {r.Relative.Cognome}" : "Sconosciuto"
+                }).ToList()
         };
     }
 }

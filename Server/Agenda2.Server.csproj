@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.NETCore.DotNetAppHost" Version="10.0.13" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
+    <PackageReference Include="QuestPDF" Version="2026.9.2" />
   </ItemGroup>
 
   <ItemGroup>
